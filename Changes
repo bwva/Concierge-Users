@@ -1,0 +1,10 @@
+Revision history for Local-Users
+
+v0.05.0 2026-01-05
+    - Initial release to CPAN
+    - SQLite, CSV/TSV, and YAML storage backends
+    - Field validation with multiple validators (email, phone, date, timestamp, boolean, enum, moniker, name)
+    - Field overrides and custom application fields
+    - Automatic data archiving on re-setup
+    - Service layer pattern with structured hashref returns
+    - Comprehensive test suite (115 tests)

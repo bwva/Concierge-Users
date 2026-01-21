@@ -1,0 +1,8 @@
+user_id,moniker,user_status,access_level,first_name,middle_name,last_name,prefix,suffix,organization,title,email,phone,text_ok,last_login_date,term_ends,last_mod_date,created_date
+
+,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,
+bob,BobBuilder,Eligible,anon,Bob,,Thomas,,,,,bob@example.com,,,"0000-00-00 00:00:00",,"2026-01-04 00:16:46","2026-01-03 23:41:40"
+emma,EmmaE,Eligible,anon,Emma,,Evans,,,,,emma@example.com,555-9012,,"0000-00-00 00:00:00",,"2026-01-04 00:25:27","2026-01-04 00:25:27"
+file_user,FileUser,Eligible,anon,,,,,,,,file@example.com,,,"0000-00-00 00:00:00",,"2026-01-04 22:11:08","2026-01-04 22:11:08"

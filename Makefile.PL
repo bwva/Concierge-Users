@@ -8,7 +8,7 @@ WriteMakefile(
     AUTHOR           => 'Bruce Van Allen <bva@cruzio.com>',
     ABSTRACT         => 'Dedicated user data management system with multiple storage backends',
     LICENSE          => 'perl',
-    MIN_PERL_VERSION => '5.40',
+    MIN_PERL_VERSION => '5.038',
     INSTALL_BASE     => undef,
 
     PREREQ_PM => {

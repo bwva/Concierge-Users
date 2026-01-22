@@ -1,8 +1,8 @@
-lib/Local/Users.pm
-lib/Local/Users/Meta.pm
-lib/Local/Users/Database.pm
-lib/Local/Users/File.pm
-lib/Local/Users/YAML.pm
+lib/Concierge/Users.pm
+lib/Concierge/Users/Meta.pm
+lib/Concierge/Users/Database.pm
+lib/Concierge/Users/File.pm
+lib/Concierge/Users/YAML.pm
 t/01-load.t
 t/02-setup.t
 t/03-crud-database.t
@@ -11,9 +11,10 @@ t/05-crud-yaml.t
 t/06-field-metadata.t
 t/07-error-handling.t
 t/08-validation.t
-examples/db-app/app.pl
-examples/file-app/app.pl
-examples/yaml-app/app.pl
+t/09-scalability.t
+examples/db-app/db-app.pl
+examples/file-app/file-app.pl
+examples/yaml-app/yaml-app.pl
 Makefile.PL
 README.md
 Changes

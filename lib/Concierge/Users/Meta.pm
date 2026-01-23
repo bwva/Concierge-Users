@@ -217,6 +217,7 @@ sub init_field_meta {
 						$_ => $field_def->{$_}
 					} grep { !/field_name|label|category/ } keys %$field_def
 				};
+				$field_definition->{required} ||= 0;
 				unless ( exists $field_definition->{null_value} ) {
 					$field_definition->{null_value} = $Concierge::Users::Meta::type_null_values{ $field_def->{type} || 'text' };
 				}

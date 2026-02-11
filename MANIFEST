@@ -19,4 +19,3 @@ t/05-crud-yaml.t
 t/06-field-metadata.t
 t/07-error-handling.t
 t/08-validation.t
-t/09-scalability.t

@@ -1,7 +1,7 @@
 package Concierge::Users::Meta v0.7.0;
 use v5.36;
 use Carp qw/ croak carp /;
-use YAML::XS qw/ DumpFile /;
+use YAML::Tiny;
 
 # ABSTRACT: Metadata for fields in Concierge::Users
 
@@ -95,13 +95,6 @@ sub init_field_meta {
 # 		my @protected_attrs = qw/ field_name category /;
 # 		my %protected_attrs = map { $_ => 1 } @protected_attrs;
 
-		# *** BVA: This is unnecessary. The module already has
-		# %Concierge::Users::Meta::type_validator_map
-		# Known validator types for validate_as validation
-# 		my %known_validators = map { $_ => 1 } qw/
-# 			text enum boolean date timestamp email phone integer moniker name
-# 		/;
-		# ***
 		my @overrides = ref $config->{field_overrides} eq 'ARRAY'
 			? $config->{field_overrides}->@*
 			: ();
@@ -668,13 +661,7 @@ sub validate_boolean {
 	if (defined $value && $value =~ /^[01]$/) {
 		return { success => 1 };
 	}
-	# *** BVA: OR:
-# 	my $null_value = $field_def->{null_value} // 0;
-# 	if (!!$value && $value ne $null_value) {
-# 		return { success => 1 };
-# 	}
-	# ***
-	# Invalid boolean 
+	# Invalid boolean
 	return {
 		success => 0,
 		message => "Invalid value '$value' for boolean $field_def->{label}"

@@ -12,10 +12,13 @@ WriteMakefile(
     INSTALL_BASE     => undef,
 
     PREREQ_PM => {
-        'Carp'      => 0,
-        'JSON::PP'  => 0,
+        'Carp'       => 0,
+        'JSON::PP'   => 0,
         'File::Path' => 0,
-        'DBI'       => 0,
+        'File::Spec' => 0,
+        'DBI'        => 0,
+        'DBD::SQLite' => 0,
+        'Text::CSV'  => 0,
         'YAML::Tiny' => 0,
     },
 
@@ -31,6 +34,20 @@ WriteMakefile(
         'lib/Concierge/Users/Database.pm' => '$(INST_LIB)/Concierge/Users/Database.pm',
         'lib/Concierge/Users/File.pm'     => '$(INST_LIB)/Concierge/Users/File.pm',
         'lib/Concierge/Users/YAML.pm'     => '$(INST_LIB)/Concierge/Users/YAML.pm',
+    },
+
+    META_MERGE => {
+        'meta-spec' => { version => 2 },
+        resources   => {
+            repository => {
+                type => 'git',
+                url  => 'https://github.com/bwva/Concierge-Users.git',
+                web  => 'https://github.com/bwva/Concierge-Users',
+            },
+            bugtracker => {
+                web => 'https://github.com/bwva/Concierge-Users/issues',
+            },
+        },
     },
 
     dist  => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },

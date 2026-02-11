@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 # Test: Field metadata and field definitions
 
-use v5.40;
+use v5.36;
 use Test2::V0;
 use File::Temp qw/ tempdir /;
 use Concierge::Users;

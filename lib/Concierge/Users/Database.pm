@@ -187,8 +187,6 @@ sub ensure_storage {
     my @indexes;
 
     foreach my $field (@{$self->{fields}}) {
-		# *** BVA: No, should be INTEGER if a field has type 'integer' 
-		# And if the binary type is kept as strictly 1|0, then it should be an INTEGER. too
         # All fields are TEXT in our schema
         my $field_def = "$field TEXT";
 

@@ -3,7 +3,7 @@
 # This file tests Users.pm with larger numbers of records (100, 500, 1000)
 # It can be excluded from the test suite if desired
 
-use v5.40;
+use v5.36;
 use Test2::V0;
 use File::Temp qw/ tempdir /;
 use Time::HiRes qw( time );

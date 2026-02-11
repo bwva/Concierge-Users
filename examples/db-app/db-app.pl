@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-use v5.40;
+use v5.36;
 
 use lib '../blib', '/Volumes/Main/Development/Repositories/Concierge-Users/lib';  
 use Concierge::Users;

@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 # Test: Error handling and edge cases
 
-use v5.40;
+use v5.36;
 use Test2::V0;
 use Test2::Tools::Exception qw/ dies lives /;
 use File::Temp qw/ tempdir /;

@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 # Test: CRUD operations for YAML backend (validation skipped)
 
-use v5.40;
+use v5.36;
 use Test2::V0;
 use File::Temp qw/ tempdir /;
 use File::Path qw/ remove_tree /;

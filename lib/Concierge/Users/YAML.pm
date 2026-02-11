@@ -1,7 +1,7 @@
 package Concierge::Users::YAML v0.7.0;
 use v5.36;
 use Carp qw/ croak /;
-use YAML;
+use YAML::Tiny;
 use File::Path qw/ make_path /;
 use File::Spec;
 use parent qw/ Concierge::Users::Meta /;
@@ -152,7 +152,7 @@ sub add {
     my $user_file = $self->_get_user_file($user_id);
 
     eval {
-        YAML::DumpFile($user_file, \%record);
+        YAML::Tiny::DumpFile($user_file, \%record);
     };
 
     if ($@) {
@@ -176,7 +176,7 @@ sub fetch {
 
     my $user_data;
     eval {
-        $user_data = YAML::LoadFile($user_file);
+        $user_data = YAML::Tiny::LoadFile($user_file);
     };
 
     if ($@) {
@@ -212,7 +212,7 @@ sub update {
     # Load existing data
     my $user_data;
     eval {
-        $user_data = YAML::LoadFile($user_file);
+        $user_data = YAML::Tiny::LoadFile($user_file);
     };
 
     return { success => 0, message => "Failed to load user data: $@" } if $@;
@@ -224,7 +224,7 @@ sub update {
 
     # Save back
     eval {
-        YAML::DumpFile($user_file, $user_data);
+        YAML::Tiny::DumpFile($user_file, $user_data);
     };
 
     if ($@) {
@@ -249,7 +249,7 @@ sub list {
         my $user_data;
 
         eval {
-            $user_data = YAML::LoadFile($user_file);
+            $user_data = YAML::Tiny::LoadFile($user_file);
         };
 
         next if $@;
@@ -343,7 +343,7 @@ v0.7.0
 =head1 DESCRIPTION
 
 Concierge::Users::YAML implements the Concierge::Users storage interface
-using one YAML file per user via the L<YAML> module.  Each user record
+using one YAML file per user via the L<YAML::Tiny> module.  Each user record
 is stored as C<< <storage_dir>/<user_id>.yaml >>.
 
 This backend is well-suited for applications that primarily access
@@ -434,7 +434,7 @@ opened and parsed for list operations.
 
 =head1 DEPENDENCIES
 
-L<YAML>
+L<YAML::Tiny>
 
 =head1 SEE ALSO
 

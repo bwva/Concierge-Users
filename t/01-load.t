@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 # Test: Basic module loading for Concierge::Users
 
-use v5.40;
+use v5.36;
 use Test2::V0;
 use File::Temp qw/ tempdir /;
 

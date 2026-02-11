@@ -1,5 +1,5 @@
 package Concierge::Users::Meta v0.7.0;
-use v5.40;
+use v5.36;
 use Carp qw/ croak carp /;
 use YAML::XS qw/ DumpFile /;
 
@@ -58,22 +58,18 @@ sub init_field_meta {
 	} @core_fields, @system_fields;
 
 	# Add requested standard fields
-	my @requested_fields;
-	my $req_std_fields	= $config->{include_standard_fields} || 'all';
-	if ( ref $req_std_fields eq 'ARRAY' ) {
-		@requested_fields	= map { lc $_ } $req_std_fields->@*;
-	}
-	elsif ( ! ref $req_std_fields ) {
-		@requested_fields	= map { lc $_ } split /\s*[,;]\s*/ => $req_std_fields;
-	}
-	
 	my @included_std_fields;
-	if ( @requested_fields and $requested_fields[0] =~ /all/i ) {
+	my @requested_fields;
+	if ( !$config->{include_standard_fields} or $config->{include_standard_fields} =~ /^all$/i ) {
 		@included_std_fields = @standard_fields;
-		@requested_fields = ();
 	}
-	elsif ( @requested_fields ) {
-		# make sure requested standard fields are available
+	else {
+		if ( ref $config->{include_standard_fields} eq 'ARRAY' ) {
+			@requested_fields	= map { lc $_ } $config->{include_standard_fields}->@*;
+		}
+		elsif ( ! ref $config->{include_standard_fields} ) {
+			@requested_fields	= map { lc $_ } split /\s*[,;]\s*/ => $config->{include_standard_fields};
+		}
 		my %standard_fields	= map { $_ => 1 } @standard_fields;
 		for my $fld (@requested_fields) {
 			if ($standard_fields{$fld}) {
@@ -83,10 +79,6 @@ sub init_field_meta {
 				carp "Non-standard field requested: $fld; configure with 'app_fields => [ ...]'";
 			}
 		}
-	}
-	else {
-		# just in case
-		@included_std_fields = @standard_fields;
 	}
 	push @fields, @included_std_fields;
 	for my $fld (@included_std_fields) {
@@ -196,7 +188,7 @@ sub init_field_meta {
 			@app_fields = $config->{app_fields}->@*;
 		}
 		elsif (!ref $config->{app_fields} ) {
-			 @app_fields = map { lc $_ } split /\s*[,;]\s*/ =>		
+			 @app_fields = map { lc $_ } split /\s*[,;]\s*/ => $config->{app_fields};
 		}
 		FIELD: foreach my $field_def (@app_fields) {
 			my $field_name;
@@ -1116,19 +1108,560 @@ sub parse_filter_string {
 
 1;
 
+=head1 NAME
+
+Concierge::Users::Meta - Field definitions, validators, and configuration
+utilities for Concierge::Users
+
+=head1 VERSION
+
+v0.7.0
+
+=head1 SYNOPSIS
+
+    use Concierge::Users;
+
+    my $users = Concierge::Users->new('/path/to/users-config.json');
+
+    # Introspect field schema
+    my $fields = $users->get_user_fields();     # ordered field list
+    my $def    = $users->get_field_definition('email');
+    my $hints  = $users->get_field_hints('email');
+
+    # Class-level field lists
+    my @core = Concierge::Users::Meta::user_core_fields();
+    my @std  = Concierge::Users::Meta::user_standard_fields();
+    my @sys  = Concierge::Users::Meta::user_system_fields();
+
+    # Display configuration
+    Concierge::Users::Meta->show_default_config();   # built-in defaults
+    $users->show_config();                            # active setup
+
+=head1 DESCRIPTION
+
+Concierge::Users::Meta is the parent class for L<Concierge::Users> and all
+storage backends.  It owns the master field definitions, the validation
+subsystem, the filter DSL parser, and the configuration display helpers.
+Application code normally interacts with Meta indirectly through a
+L<Concierge::Users> instance, but the introspection methods and class-level
+field lists are available for direct use.
+
+=head1 FIELD CATALOG
+
+Every user record is composed of fields drawn from three built-in
+categories plus an optional application category.
+
+=head2 Core Fields (4)
+
+Always present in every setup.
+
+=over 4
+
+=item B<user_id>
+
+Primary authentication identifier.
+
+    type:          system
+    required:      1
+    max_length:    30
+    default:       ""
+    null_value:    ""
+    must_validate: 0
+    description:   User login ID - Primary authentication identifier
+
+=item B<moniker>
+
+User's preferred display name, nickname, or initials.
+
+    type:          text
+    validate_as:   moniker
+    required:      1
+    max_length:    24
+    default:       ""
+    null_value:    ""
+    must_validate: 1
+    description:   User's preferred display name, nickname, or initials
+
+=item B<user_status>
+
+Account status for access control.
+
+    type:          enum
+    validate_as:   enum
+    required:      1
+    options:       *Eligible, OK, Inactive
+    max_length:    20
+    default:       Eligible  (auto-set from * option)
+    null_value:    ""
+    must_validate: 1
+
+=item B<access_level>
+
+Permission level for feature access.
+
+    type:          enum
+    validate_as:   enum
+    required:      1
+    options:       *anon, visitor, member, staff, admin
+    max_length:    20
+    default:       anon  (auto-set from * option)
+    null_value:    ""
+    must_validate: 1
+
+=back
+
+=head2 Standard Fields (12)
+
+Included by default when C<include_standard_fields> is omitted or set
+to C<'all'>.  Pass an arrayref of names to select specific fields, or
+an empty arrayref C<[]> to exclude all standard fields.
+
+B<Name fields:>
+
+=over 4
+
+=item B<first_name> -- type C<text>, validate_as C<name>, max 50, must_validate 1
+
+=item B<middle_name> -- type C<text>, validate_as C<name>, max 50, must_validate 1
+
+=item B<last_name> -- type C<text>, validate_as C<name>, max 50, must_validate 1
+
+=item B<prefix> -- type C<enum>, options: (none) Dr Mr Ms Mrs Mx Prof Hon Sir Madam, max 10
+
+=item B<suffix> -- type C<enum>, options: (none) Jr Sr II III IV V PhD MD DDS Esq, max 10
+
+=back
+
+B<Identity fields:>
+
+=over 4
+
+=item B<organization> -- type C<text>, validate_as C<text>, max 100
+
+=item B<title> -- type C<text>, validate_as C<text>, max 100
+
+=back
+
+B<Contact fields:>
+
+=over 4
+
+=item B<email> -- type C<email>, validate_as C<email>, max 255
+
+=item B<phone> -- type C<phone>, validate_as C<phone>, max 20
+
+=item B<text_ok> -- type C<boolean>, validate_as C<boolean>, null_value 0, max 1
+
+=back
+
+B<Temporal fields:>
+
+=over 4
+
+=item B<last_login_date> -- type C<timestamp>, validate_as C<timestamp>,
+default C<0000-00-00 00:00:00>, max 19
+
+=item B<term_ends> -- type C<date>, validate_as C<date>,
+null_value C<0000-00-00>, max 10
+
+=back
+
+All standard fields have C<required =E<gt> 0> by default.
+
+=head2 System Fields (2)
+
+Always appended to the field list.  Auto-managed by the backends;
+cannot be set through the public API.  Protected from overrides.
+
+=over 4
+
+=item B<last_mod_date> -- type C<system>, timestamp updated on every write
+
+=item B<created_date> -- type C<system>, timestamp set once on creation,
+C<required =E<gt> 1>
+
+=back
+
+=head1 FIELD ATTRIBUTES
+
+Each field definition is a hashref that may contain the following keys:
+
+=over 4
+
+=item C<field_name> -- Internal name (snake_case).  Used as hash key and
+column/file identifier.
+
+=item C<category> -- One of C<core>, C<standard>, C<system>, or C<app>.
+Set automatically; protected from overrides.
+
+=item C<type> -- Data type: C<text>, C<email>, C<phone>, C<date>,
+C<timestamp>, C<boolean>, C<integer>, C<enum>, C<system>.
+
+=item C<validate_as> -- Validator to use if different from C<type>.
+See L</VALIDATOR TYPES>.
+
+=item C<label> -- Human-readable label for UI display.  Auto-generated
+from C<field_name> if omitted.
+
+=item C<description> -- Short explanatory text for documentation or UI
+hints.
+
+=item C<required> -- C<1> if the field must have a non-null value on
+creation; C<0> otherwise.
+
+=item C<must_validate> -- C<1> if a validation failure should reject the
+entire operation; C<0> to treat failure as a non-fatal warning.
+
+=item C<options> -- Arrayref of allowed values for C<enum> fields.
+Prefix one option with C<*> to designate the default (see
+L</Enum Default Convention>).
+
+=item C<default> -- Value assigned to the field on new-record creation
+when no value is supplied.
+
+=item C<null_value> -- Sentinel that represents "no data" for this field
+type (e.g. C<""> for text, C<0> for boolean, C<0000-00-00> for date).
+
+=item C<max_length> -- Maximum character length enforced by the C<text>
+validator and used as a UI hint.
+
+=back
+
+=head1 VALIDATOR TYPES
+
+Ten built-in validators are available.  Each is selected by the field's
+C<validate_as> (or C<type> as fallback) and receives
+C<($user_data, $field_name, $field_def)>.
+
+=over 4
+
+=item B<text>
+
+Validates C<max_length> if defined.  Accepts any string.
+
+    null_value: ""
+
+=item B<email>
+
+Pattern: C<< /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/ >>
+
+    null_value: ""
+
+=item B<phone>
+
+Digits, spaces, hyphens, parentheses, optional leading C<+>;
+minimum 7 characters.
+
+    null_value: ""
+
+=item B<date>
+
+Pattern: C<YYYY-MM-DD> (C<< /^\d{4}-\d{2}-\d{2}$/ >>).
+
+    null_value: "0000-00-00"
+
+=item B<timestamp>
+
+Pattern: C<YYYY-MM-DD HH:MM:SS> or C<YYYY-MM-DDTHH:MM:SS>.
+
+    null_value: "0000-00-00 00:00:00"
+
+=item B<boolean>
+
+Strictly C<0> or C<1>.
+
+    null_value: 0
+
+=item B<integer>
+
+Optional leading minus, digits only (C<< /^\-?\d+$/ >>).
+
+    null_value: 0
+
+=item B<enum>
+
+Value must appear in the field's C<v_options> list (options with C<*>
+prefix stripped).
+
+    null_value: ""
+
+=item B<moniker>
+
+2-24 alphanumeric characters, no spaces
+(C<< /^[a-zA-Z0-9]{2,24}$/ >>).
+
+    null_value: ""
+
+=item B<name>
+
+Letters (including accented), hyphens, apostrophes, and internal
+spaces.
+
+    null_value: ""
+
+=back
+
+=head2 validate_as vs type
+
+A field's C<type> declares its data type and determines the default
+validator.  C<validate_as> overrides the validator without changing
+the type.  For example, an application field with C<< type => 'text' >>
+and C<< validate_as => 'moniker' >> is stored as text but validated with
+the moniker pattern.  When C<type> is changed via a field override and
+C<validate_as> is not explicitly set, C<validate_as> is updated
+automatically to match the new type.
+
+=head2 must_validate Behavior
+
+When C<must_validate> is C<1> for a field, a validation failure causes
+the entire C<register_user> or C<update_user> call to return
+C<< { success => 0 } >>.  When C<must_validate> is C<0>, the field's
+value is silently dropped and a warning is appended to the response.
+
+Setting C<< required => 1 >> in a field override automatically enables
+C<must_validate> unless C<must_validate> is explicitly set in the same
+override.
+
+The environment variable C<USERS_SKIP_VALIDATION> bypasses all
+validation when set to a true value.
+
+=head1 FIELD CUSTOMIZATION
+
+=head2 Application Fields
+
+Pass C<app_fields> to C<< Concierge::Users->setup() >> as an arrayref.
+Each element is either a string (minimal definition) or a hashref (full
+definition):
+
+    app_fields => [
+        'nickname',                        # string shorthand
+        {                                  # full definition
+            field_name  => 'department',
+            type        => 'enum',
+            options     => ['*Engineering', 'Sales', 'Support'],
+            required    => 1,
+            label       => 'Department',
+        },
+    ],
+
+String shorthand creates a field with C<< type => 'text' >>,
+C<< validate_as => 'text' >>, C<< required => 0 >>.
+
+Reserved names (any core, standard, or system field name) are rejected
+with a warning.
+
+=head2 Field Overrides
+
+Pass C<field_overrides> to C<setup()> as an arrayref of hashrefs.
+Each must contain C<field_name> to identify the target:
+
+    field_overrides => [
+        {
+            field_name => 'email',
+            required   => 1,
+            label      => 'Work Email',
+        },
+    ],
+
+B<Protected fields> that cannot be overridden: C<user_id>,
+C<created_date>, C<last_mod_date>.
+
+B<Protected attributes> that cannot be changed: C<field_name>,
+C<category>.
+
+Auto-behaviors:
+
+=over 4
+
+=item * Changing C<type> auto-updates C<validate_as> to match (unless
+C<validate_as> is also specified).
+
+=item * Setting C<< required => 1 >> auto-enables C<must_validate>
+(unless C<must_validate> is also specified).
+
+=item * An unknown C<validate_as> value falls back to C<text> with a
+warning.
+
+=back
+
+=head2 Enum Default Convention
+
+In an C<options> arrayref, prefix exactly one value with C<*> to mark it
+as the default:
+
+    options => ['*Free', 'Premium', 'Enterprise']
+
+The C<*> is stripped for validation (stored internally in C<v_options>).
+If no explicit C<default> is set for the field, the C<*>-marked option
+becomes the default automatically.  A bare C<*> (e.g. in C<prefix> and
+C<suffix>) represents an empty default.
+
+=head1 FILTER DSL
+
+The C<list_users> method accepts a filter string with five operators and
+two combinators.
+
+=head2 Operators
+
+    =   exact match             user_status=OK
+    :   substring (case-insensitive)   last_name:smith
+    !   not-contains (case-insensitive) email!example.org
+    >   greater than (string)   last_login_date>2025-01-01
+    <   less than (string)      term_ends<2026-01-01
+
+=head2 Combinators
+
+    ;   AND -- all conditions must match
+    |   OR  -- at least one group must match
+
+AND binds tighter than OR: C<a=1;b=2|c=3> means
+C<(a=1 AND b=2) OR (c=3)>.
+
+=head2 Examples
+
+    # Active members
+    user_status=OK;access_level=member
+
+    # Staff or admin
+    access_level=staff|access_level=admin
+
+    # Name search with status filter
+    last_name:Garcia;user_status=OK
+
+    # Recent logins
+    last_login_date>2025-06-01
+
+Unknown fields in a filter string produce a warning and are skipped.
+
+=head1 METHODS
+
+=head2 Class Methods
+
+=head3 user_core_fields
+
+    my @fields = Concierge::Users::Meta::user_core_fields();
+
+Returns the list of core field names:
+C<user_id>, C<moniker>, C<user_status>, C<access_level>.
+
+=head3 user_standard_fields
+
+    my @fields = Concierge::Users::Meta::user_standard_fields();
+
+Returns the list of standard field names (12 fields).
+
+=head3 user_system_fields
+
+    my @fields = Concierge::Users::Meta::user_system_fields();
+
+Returns the list of system field names: C<last_mod_date>,
+C<created_date>.
+
+=head3 init_field_meta
+
+    my $meta = Concierge::Users::Meta::init_field_meta(\%config);
+
+Processes the setup configuration and returns a hashref with C<fields>
+(ordered arrayref) and C<field_definitions> (hashref of field
+definitions).  Called internally by C<< Concierge::Users->setup() >>.
+
+=head3 show_default_config
+
+    Concierge::Users::Meta->show_default_config();
+
+Prints the built-in default field configuration template to STDOUT.
+
+=head2 Instance Methods
+
+=head3 get_field_definition
+
+    my $def = $users->get_field_definition('email');
+
+Returns the complete field definition hashref for the named field, or
+C<undef> if the field is not in the current schema.
+
+=head3 get_field_validator
+
+    my $code_ref = $users->get_field_validator('email');
+
+Returns the validator code reference for the named field based on its
+C<validate_as> or C<type>, or C<undef> if no validator is available.
+
+=head3 get_field_hints
+
+    my $hints = $users->get_field_hints('email');
+
+Returns a hashref of UI-friendly attributes: C<label>, C<type>,
+C<max_length>, C<options>, C<description>, C<required>.
+
+=head3 get_user_fields
+
+    my $fields = $users->get_user_fields();
+
+Returns the ordered arrayref of field names for this instance's schema.
+
+=head3 validate_user_data
+
+    my $result = $users->validate_user_data(\%data);
+
+Validates C<%data> against the field schema.  Returns
+C<< { success => 1, valid_data => \%clean } >> on success (with optional
+C<warnings> arrayref), or C<< { success => 0, message => $reason } >>
+on failure.
+
+=head3 parse_filter_string
+
+    my $filters = $users->parse_filter_string('user_status=OK;access_level=member');
+
+Parses a filter DSL string into an internal structure suitable for
+backend list methods.  See L</FILTER DSL>.
+
+=head3 show_config
+
+    $users->show_config();
+    $users->show_config(output_path => '/tmp/config.yaml');
+
+Prints the active YAML configuration file for this instance to STDOUT.
+Must be called on a L<Concierge::Users> instance (not a class method).
+
+=head3 config_to_yaml
+
+    my $yaml = Concierge::Users::Meta::config_to_yaml(\%config, $storage_dir);
+
+Converts a configuration hashref to a human-readable YAML string with a
+warning header.  Used internally during C<setup()>.
+
+=head1 SEE ALSO
+
+L<Concierge::Users> -- main API and CRUD operations
+
+L<Concierge::Users::Database>, L<Concierge::Users::File>,
+L<Concierge::Users::YAML> -- storage backend implementations
+
+=head1 AUTHOR
+
+Bruce Van Allen <bva@cruzio.com>
+
+=head1 LICENSE
+
+This module is free software; you can redistribute it and/or modify it
+under the terms of the Artistic License 2.0.
+
+=cut
+
 __DATA__
 ################################################################################
-#  Concierge::Users DEFAULT Configuration Template                            #
+#  Concierge::Users DEFAULT Configuration Template                             #
 #                                                                              #
-#  This shows the built-in field definitions and default configuration.       #
-#  Editing this file will NOT create or modify a Users setup.                #
+#  This shows the built-in field definitions and default configuration.        #
+#  Editing this file will NOT create or modify a Users setup.                  #
 #                                                                              #
-#  To create a new setup, use the Concierge::Users API:                       #
-#    my $users = Concierge::Users->new();                                    #
-#    $users->setup(...);                                                     #
+#  To create a new setup, use the Concierge::Users API:                        #
+#    my $users = Concierge::Users->new();                                      #
+#    $users->setup(...);                                                       #
 #                                                                              #
-#  To view an existing setup's configuration:                                 #
-#    $users->show_config();                                                  #
+#  To view an existing setup's configuration:                                  #
+#    $users->show_config();                                                    #
 ################################################################################
 
 Configuration:

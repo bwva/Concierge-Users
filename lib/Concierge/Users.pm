@@ -1,5 +1,5 @@
 package Concierge::Users v0.7.0;
-use v5.40;
+use v5.36;
 
 use Carp		qw/ croak carp /;
 use JSON::PP    qw/ encode_json decode_json /;
@@ -365,3 +365,300 @@ sub DESTROY {
 }
 
 1;
+
+__END__
+
+=head1 NAME
+
+Concierge::Users - User data management with multiple storage backends
+
+=head1 VERSION
+
+v0.7.0
+
+=head1 SYNOPSIS
+
+    use Concierge::Users;
+
+    # One-time setup -- creates storage and config file
+    my $result = Concierge::Users->setup({
+        storage_dir             => './data/users',
+        backend                 => 'database',    # 'database', 'file', or 'yaml'
+        include_standard_fields => 'all',
+        app_fields              => ['role', 'theme'],
+    });
+
+    # Runtime -- load from saved config
+    my $users = Concierge::Users->new('./data/users/users-config.json');
+
+    # Register a user
+    my $result = $users->register_user({
+        user_id => 'alice',
+        moniker => 'Alice',
+        email   => 'alice@example.com',
+    });
+
+    # Retrieve a user
+    my $result = $users->get_user('alice');
+    my $data   = $result->{user};
+
+    # Update a user
+    $users->update_user('alice', { email => 'new@example.com' });
+
+    # List users (optionally with filters)
+    my $result = $users->list_users('user_status=Active');
+    my @ids    = @{ $result->{user_ids} };
+
+    # Delete a user
+    $users->delete_user('alice');
+
+=head1 DESCRIPTION
+
+Concierge::Users manages user data records with a two-phase lifecycle:
+
+=over 4
+
+=item 1. B<Setup> (one-time) -- C<< Concierge::Users->setup(\%config) >>
+configures the storage backend, defines the field schema, and writes a
+JSON config file.
+
+=item 2. B<Runtime> -- C<< Concierge::Users->new($config_file) >> loads
+the saved config and provides CRUD operations.
+
+=back
+
+All public methods return hashrefs with a C<success> key (1 or 0) and a
+C<message> on failure:
+
+    { success => 1, user_id => 'alice', user => \%data }
+    { success => 0, message => 'User not found' }
+
+Concierge::Users is the user data component of the Concierge suite,
+alongside L<Concierge::Auth> (password authentication) and
+L<Concierge::Sessions> (session management). It can also be used
+standalone.
+
+=head2 Storage Backends
+
+=over 4
+
+=item B<database> -- SQLite via L<DBI>/L<DBD::SQLite>. Recommended for
+production and larger datasets.
+
+=item B<file> -- CSV/TSV flat file. Simple, human-readable, no database
+dependency.
+
+=item B<yaml> -- One YAML file per user via L<YAML::Tiny>. Good for
+individual user access patterns.
+
+=back
+
+All backends provide the same CRUD API. The backend is selected at setup
+time and recorded in the config file.
+
+=head2 Field System
+
+Every user record has two required fields: C<user_id> and C<moniker>.
+Beyond these, the field schema is configured at setup time from four
+categories:
+
+B<Core (4):> C<user_id>, C<moniker>, C<user_status>, C<access_level> --
+always present.
+
+B<Standard (12):> C<first_name>, C<middle_name>, C<last_name>,
+C<prefix>, C<suffix>, C<organization>, C<title>, C<email>, C<phone>,
+C<text_ok>, C<last_login_date>, C<term_ends> -- included by default.
+Select specific ones with an arrayref, or pass an empty arrayref
+C<[]> to exclude all standard fields.
+
+B<System (2):> C<last_mod_date>, C<created_date> -- auto-managed
+timestamps, protected from overrides and API writes.
+
+B<Application:> Custom fields defined with C<app_fields> as name strings
+or full definition hashrefs.
+
+Field definitions can also be modified with C<field_overrides>.
+See L<Concierge::Users::Meta/FIELD CATALOG> for complete field details
+and L<Concierge::Users::Meta/FIELD CUSTOMIZATION> for the customization
+guide.
+
+=head2 Validation
+
+Field values are validated on C<register_user> and C<update_user>.
+Ten validator types are available:
+
+C<text>, C<email>, C<phone>, C<date>, C<timestamp>, C<boolean>,
+C<integer>, C<enum>, C<moniker>, C<name>.
+
+Each field's validator is determined by its C<validate_as> attribute, or
+by C<type> as a fallback.  Fields where C<must_validate> is C<1> will
+reject the entire operation on failure.  Fields where C<must_validate>
+is C<0> produce a non-fatal warning and the invalid value is dropped.
+
+Set the environment variable C<USERS_SKIP_VALIDATION> to a true value to
+bypass all validation (useful for bulk imports or testing).
+
+See L<Concierge::Users::Meta/VALIDATOR TYPES> for accepted patterns and
+null values for each type.
+
+=head2 Data Archiving
+
+Calling C<setup()> when data already exists automatically archives the
+existing data (renamed with a timestamp suffix) before creating new
+storage. This prevents accidental data loss during schema changes.
+
+=head1 METHODS
+
+=head2 setup
+
+    my $result = Concierge::Users->setup(\%config);
+
+One-time initialization. Creates the storage directory, backend storage,
+and writes the config files (JSON and YAML).
+
+B<Configuration keys:>
+
+=over 4
+
+=item C<storage_dir> (required) -- directory for data files; created if
+absent.
+
+=item C<backend> (required) -- C<'database'>, C<'file'>, or C<'yaml'>.
+
+=item C<include_standard_fields> -- Optional.  When omitted or set to
+C<'all'>, all 12 standard fields are included (the default).  Pass an
+arrayref of field names to select specific standard fields, or an empty
+arrayref C<[]> to exclude all standard fields.
+
+=item C<app_fields> -- arrayref of application-specific field names
+(strings) or field definition hashrefs.
+
+=item C<file_format> -- C<'csv'> or C<'tsv'> (file backend only;
+default C<'tsv'>).
+
+=item C<field_overrides> -- arrayref of hashrefs that modify standard
+field definitions.  See L<Concierge::Users::Meta/Field Overrides>.
+
+=back
+
+Returns C<< { success => 1, config_file => $path } >> on success.
+
+Croaks if C<storage_dir> or C<backend> is missing, or if the directory
+cannot be created.
+
+=head2 new
+
+    my $users = Concierge::Users->new($config_file);
+
+Loads a previously created config file and instantiates the backend.
+
+Croaks if the config file does not exist, cannot be parsed, or the
+backend module cannot be loaded.
+
+=head2 register_user
+
+    my $result = $users->register_user(\%user_data);
+
+Registers a new user. C<%user_data> must include C<user_id> and
+C<moniker>. Additional fields are validated against the schema and
+stored. Fields not in the schema are silently ignored.
+
+User IDs must be 2-30 characters (alphanumeric plus C<.>, C<_>, C<@>,
+C<->). Monikers must be 2-24 alphanumeric characters.
+
+Returns C<< { success => 1, message => "User 'id' created" } >> on
+success. May include a C<warnings> arrayref for non-fatal validation
+issues.
+
+=head2 get_user
+
+    my $result = $users->get_user($user_id);
+    my $result = $users->get_user($user_id, { fields => [qw/email phone/] });
+
+Retrieves a user record. With the C<fields> option, returns only the
+specified fields (C<user_id> is always included).
+
+Returns C<< { success => 1, user_id => $id, user => \%data } >>.
+
+=head2 update_user
+
+    my $result = $users->update_user($user_id, \%updates);
+
+Updates an existing user record. The C<user_id>, C<created_date>, and
+C<last_mod_date> fields are stripped from updates automatically.
+Remaining fields are validated before writing.
+
+Returns C<< { success => 1 } >> on success.
+
+=head2 list_users
+
+    my $result = $users->list_users();
+    my $result = $users->list_users('user_status=OK');
+    my $result = $users->list_users('access_level=staff|access_level=admin');
+
+Returns user IDs, optionally filtered.  The filter string supports five
+operators: C<=> (exact), C<:> (contains), C<!> (not-contains), C<E<gt>>
+(greater than), C<E<lt>> (less than).  Combine conditions with C<;>
+(AND) or C<|> (OR); AND binds tighter than OR.
+
+    # Active members
+    user_status=OK;access_level=member
+
+    # Staff or admin
+    access_level=staff|access_level=admin
+
+See L<Concierge::Users::Meta/FILTER DSL> for the full reference.
+
+Returns:
+
+    {
+        success        => 1,
+        user_ids       => \@ids,
+        total_count    => $n,
+        filter_applied => $filter_string,
+    }
+
+=head2 delete_user
+
+    my $result = $users->delete_user($user_id);
+
+Deletes a user record. Fails if the user does not exist.
+
+=head2 show_default_config
+
+    Concierge::Users::Meta->show_default_config();
+
+Prints the built-in default field configuration template to STDOUT.
+Can be called as a class or instance method (inherited from
+L<Concierge::Users::Meta>).
+
+=head2 show_config
+
+    $users->show_config();
+    $users->show_config(output_path => '/tmp/my-config.yaml');
+
+Prints the active YAML configuration for this instance to STDOUT.
+Must be called on an instance (after C<new>).  Inherited from
+L<Concierge::Users::Meta>.
+
+=head1 SEE ALSO
+
+L<Concierge::Users::Meta> -- field definitions, validators, and
+configuration utilities
+
+L<Concierge::Users::Database>, L<Concierge::Users::File>,
+L<Concierge::Users::YAML> -- storage backend implementations
+
+L<Concierge::Auth>, L<Concierge::Sessions> -- companion Concierge
+components
+
+=head1 AUTHOR
+
+Bruce Van Allen <bva@cruzio.com>
+
+=head1 LICENSE
+
+This module is free software; you can redistribute it and/or modify it
+under the terms of the Artistic License 2.0.
+
+=cut

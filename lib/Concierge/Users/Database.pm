@@ -1,5 +1,5 @@
 package Concierge::Users::Database v0.7.0;
-use v5.40;
+use v5.36;
 use Carp qw/ croak /;
 use DBI;
 use parent qw/ Concierge::Users::Meta /;
@@ -422,3 +422,129 @@ sub DESTROY {
 1;
 
 __END__
+
+=head1 NAME
+
+Concierge::Users::Database - SQLite storage backend for Concierge::Users
+
+=head1 VERSION
+
+v0.7.0
+
+=head1 SYNOPSIS
+
+    use Concierge::Users;
+
+    # Setup with the database backend
+    Concierge::Users->setup({
+        storage_dir             => '/var/lib/myapp/users',
+        backend                 => 'database',
+        include_standard_fields => 'all',
+    });
+
+    # Runtime -- the backend is loaded automatically
+    my $users = Concierge::Users->new('/var/lib/myapp/users/users-config.json');
+
+=head1 DESCRIPTION
+
+Concierge::Users::Database implements the Concierge::Users storage
+interface using SQLite via L<DBI> and L<DBD::SQLite>.  User records are
+stored in a single C<users> table inside C<< <storage_dir>/users.db >>.
+
+This is the recommended backend for production deployments and larger
+datasets.  It provides indexed lookups, SQL-based filtering, and
+transactional writes with no external database server required.
+
+B<Archiving:> When C<setup()> is called and the C<users> table already
+contains data, the existing table is renamed to
+C<< users_YYYYMMDD_HHMMSS >> before a new table is created.  Empty
+tables are silently dropped.
+
+Applications interact with this module indirectly through the
+L<Concierge::Users> API; direct instantiation is not required.
+
+=head1 METHODS
+
+=head2 configure
+
+    my $result = Concierge::Users::Database->configure(\%setup_config);
+
+Class method called by C<< Concierge::Users->setup() >>.  Creates (or
+archives and recreates) the SQLite database and C<users> table.  Returns
+a hashref with C<success>, C<message>, and C<config>.
+
+=head2 new
+
+    my $backend = Concierge::Users::Database->new(\%runtime_config);
+
+Constructor called by C<< Concierge::Users->new() >>.  Connects to the
+existing SQLite database using the saved configuration.  Croaks on
+connection failure.
+
+=head2 add
+
+    my $result = $backend->add($user_id, \%initial_record);
+
+Inserts a new row.  Sets C<created_date> and C<last_mod_date> to the
+current UTC timestamp.
+
+=head2 fetch
+
+    my $result = $backend->fetch($user_id);
+
+Retrieves a single user by C<user_id>.  Returns
+C<< { success => 1, data => \%row } >> or
+C<< { success => 0, message => "..." } >>.
+
+=head2 update
+
+    my $result = $backend->update($user_id, \%updates);
+
+Updates the specified fields for an existing user.  Read-only fields
+(C<user_id>, C<created_date>, C<last_mod_date>) are stripped
+automatically; C<last_mod_date> is refreshed.
+
+=head2 delete
+
+    my $result = $backend->delete($user_id);
+
+Deletes the row matching C<user_id>.
+
+=head2 list
+
+    my $result = $backend->list(\%filters, \%options);
+
+Returns all users matching the parsed filter structure (see
+L<Concierge::Users::Meta/FILTER DSL>).  With no filters, returns all
+users.  Result: C<< { data => \@rows, total_count => $n } >>.
+
+=head2 disconnect
+
+    $backend->disconnect();
+
+Closes the database handle.  Also called automatically during object
+destruction.
+
+=head1 DEPENDENCIES
+
+L<DBI>, L<DBD::SQLite>
+
+=head1 SEE ALSO
+
+L<Concierge::Users> -- main API
+
+L<Concierge::Users::Meta> -- field definitions and validators
+
+L<Concierge::Users::File>, L<Concierge::Users::YAML> -- alternative
+backends
+
+=head1 AUTHOR
+
+Bruce Van Allen <bva@cruzio.com>
+
+=head1 LICENSE
+
+This module is free software; you can redistribute it and/or modify it
+under the terms of the Artistic License 2.0.
+
+=cut

@@ -7,8 +7,8 @@ WriteMakefile(
     VERSION_FROM     => 'lib/Concierge/Users.pm',
     AUTHOR           => 'Bruce Van Allen <bva@cruzio.com>',
     ABSTRACT         => 'Dedicated user data management system with multiple storage backends',
-    LICENSE          => 'perl',
-    MIN_PERL_VERSION => '5.038',
+    LICENSE          => 'artistic_2',
+    MIN_PERL_VERSION => '5.036',
     INSTALL_BASE     => undef,
 
     PREREQ_PM => {

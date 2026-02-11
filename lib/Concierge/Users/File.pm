@@ -1,5 +1,5 @@
 package Concierge::Users::File v0.7.0;
-use v5.40;
+use v5.36;
 use Carp qw/ croak /;
 use Text::CSV;
 use File::Path qw/ make_path /;
@@ -500,3 +500,136 @@ sub disconnect {
 1;
 
 __END__
+
+=head1 NAME
+
+Concierge::Users::File - CSV/TSV flat-file storage backend for
+Concierge::Users
+
+=head1 VERSION
+
+v0.7.0
+
+=head1 SYNOPSIS
+
+    use Concierge::Users;
+
+    # Setup with the file backend (TSV, default)
+    Concierge::Users->setup({
+        storage_dir             => '/var/lib/myapp/users',
+        backend                 => 'file',
+        include_standard_fields => 'all',
+    });
+
+    # Setup with CSV format
+    Concierge::Users->setup({
+        storage_dir             => '/var/lib/myapp/users',
+        backend                 => 'file',
+        file_format             => 'csv',
+        include_standard_fields => [qw/ email phone /],
+    });
+
+    # Runtime -- the backend is loaded automatically
+    my $users = Concierge::Users->new('/var/lib/myapp/users/users-config.json');
+
+=head1 DESCRIPTION
+
+Concierge::Users::File implements the Concierge::Users storage interface
+using a single CSV or TSV flat file via L<Text::CSV>.  All records are
+stored in C<< <storage_dir>/users.tsv >> (or C<users.csv>), with the
+first row as a header containing field names.
+
+The file format is selected at setup time with the C<file_format>
+parameter (C<'csv'> or C<'tsv'>; default C<'tsv'>).
+
+B<Write behavior:> Additions append to the file.  Updates and deletes
+perform a full-file rewrite (read all rows, modify, write back).  This
+is simple and reliable but means write performance is proportional to
+file size.
+
+B<Archiving:> When C<setup()> is called and the data file already
+contains user rows, the existing file is renamed to
+C<< users_YYYYMMDD_HHMMSS.tsv >> (or C<.csv>) before a new file is
+created.
+
+Applications interact with this module indirectly through the
+L<Concierge::Users> API; direct instantiation is not required.
+
+=head1 METHODS
+
+=head2 configure
+
+    my $result = Concierge::Users::File->configure(\%setup_config);
+
+Class method called by C<< Concierge::Users->setup() >>.  Creates (or
+archives and recreates) the data file with a header row.  Returns a
+hashref with C<success>, C<message>, and C<config>.
+
+=head2 new
+
+    my $backend = Concierge::Users::File->new(\%runtime_config);
+
+Constructor called by C<< Concierge::Users->new() >>.  Initializes the
+L<Text::CSV> parser with the saved format.  Croaks if the parser cannot
+be created.
+
+=head2 add
+
+    my $result = $backend->add($user_id, \%initial_record);
+
+Appends a new row to the data file.  Sets C<created_date> and
+C<last_mod_date> to the current UTC timestamp.
+
+=head2 fetch
+
+    my $result = $backend->fetch($user_id);
+
+Reads the file sequentially to find the row with the matching
+C<user_id>.  Returns C<< { success => 1, data => \%row } >> or
+C<< { success => 0, message => "..." } >>.
+
+=head2 update
+
+    my $result = $backend->update($user_id, \%updates);
+
+Rewrites the entire file, applying updates to the matching row.
+Read-only fields (C<user_id>, C<created_date>, C<last_mod_date>) are
+stripped automatically; C<last_mod_date> is refreshed.
+
+=head2 delete
+
+    my $result = $backend->delete($user_id);
+
+Rewrites the file, omitting the row matching C<user_id>.
+
+=head2 list
+
+    my $result = $backend->list(\%filters, \%options);
+
+Reads all rows and applies the parsed filter structure (see
+L<Concierge::Users::Meta/FILTER DSL>).  With no filters, returns all
+users.  Result: C<< { data => \@rows, total_count => $n } >>.
+
+=head1 DEPENDENCIES
+
+L<Text::CSV>
+
+=head1 SEE ALSO
+
+L<Concierge::Users> -- main API
+
+L<Concierge::Users::Meta> -- field definitions and validators
+
+L<Concierge::Users::Database>, L<Concierge::Users::YAML> -- alternative
+backends
+
+=head1 AUTHOR
+
+Bruce Van Allen <bva@cruzio.com>
+
+=head1 LICENSE
+
+This module is free software; you can redistribute it and/or modify it
+under the terms of the Artistic License 2.0.
+
+=cut

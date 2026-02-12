@@ -536,8 +536,11 @@ arrayref C<[]> to exclude all standard fields.
 =item C<file_format> -- C<'csv'> or C<'tsv'> (file backend only;
 default C<'tsv'>).
 
-=item C<field_overrides> -- arrayref of hashrefs that modify standard
-field definitions.  See L<Concierge::Users::Meta/Field Overrides>.
+=item C<field_overrides> -- arrayref of hashrefs that modify built-in
+field definitions.  Core enum fields like C<user_status> and
+C<access_level> cannot be removed, but their C<options> can be
+replaced to fit your application.
+See L<Concierge::Users::Meta/Field Overrides>.
 
 =back
 

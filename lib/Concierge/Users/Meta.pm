@@ -1182,6 +1182,10 @@ Account status for access control.
     null_value:    ""
     must_validate: 1
 
+This is a core field (always present), but its C<options> can be
+replaced via C<field_overrides> to match your application's workflow.
+See L</Field Overrides> for an example.
+
 =item B<access_level>
 
 Permission level for feature access.
@@ -1194,6 +1198,9 @@ Permission level for feature access.
     default:       anon  (auto-set from * option)
     null_value:    ""
     must_validate: 1
+
+Core field (always present); C<options> can be replaced via
+C<field_overrides>.  See L</Field Overrides>.
 
 =back
 
@@ -1470,6 +1477,24 @@ C<validate_as> is also specified).
 warning.
 
 =back
+
+B<Overriding enum options:>  Core fields like C<user_status> and
+C<access_level> are always present, but their C<options> are not
+fixed.  Replace them with values that fit your domain:
+
+    # Makerspace member status instead of the default
+    # Eligible / OK / Inactive
+    field_overrides => [
+        {
+            field_name => 'user_status',
+            options    => [qw( *Applicant Novice Skilled
+                               Expert Mentor Steward )],
+        },
+    ],
+
+The C<*>-prefixed option becomes the default (see L</Enum Default
+Convention>).  Validation, filtering, and all other enum behaviors
+apply to the new option set automatically.
 
 =head2 Enum Default Convention
 

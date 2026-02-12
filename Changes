@@ -1,5 +1,9 @@
 Revision history for Concierge-Users
 
+v0.7.1 2026-02-11
+    - Documentation fixes: include_standard_fields default behavior, core enum override via field_overrides
+    - Moved scalability benchmarks to xt/ author tests
+
 v0.7.0 2026-02-11
     - Initial release to CPAN
     - SQLite, CSV/TSV, and YAML storage backends

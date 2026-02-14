@@ -1,5 +1,11 @@
 Revision history for Concierge-Users
 
+v0.7.4 2026-02-12
+    - Rebuilt tarball with GNU tar (fixes PaxHeader issue on CPAN)
+
+v0.7.1 2026-02-12
+    - Fixed use of Capture::Tiny in tests
+
 v0.7.1 2026-02-11
     - Documentation fixes: include_standard_fields default behavior, core enum override via field_overrides
     - Moved scalability benchmarks to xt/ author tests
@@ -12,3 +18,5 @@ v0.7.0 2026-02-11
     - Automatic data archiving on re-setup
     - Service layer pattern with structured hashref returns
     - Comprehensive test suite (115 tests)
+v0.7.2 2026-02-11
+    - Improved documentation

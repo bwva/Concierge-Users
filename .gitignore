@@ -12,6 +12,8 @@ Makefile
 blib/
 pm_to_blib
 Local-Users-*/
+Concierge-Users-*/
+*.tar.gz
 
 # Module::Build
 _build/

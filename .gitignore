@@ -1,29 +1,29 @@
-# Editor files
-*.swp
-*.bak
-*.~
-.DS_Store
-.vscode/
-.idea/
-
-# Build artifacts
-Makefile.old
-Makefile
+# Perl build artifacts
 blib/
-pm_to_blib
-Local-Users-*/
-Concierge-Users-*/
-*.tar.gz
-
-# Module::Build
-_build/
-Build
-Build.bat
-
-# Misc
-*.tmp
-MYMETA.*
+Makefile
+Makefile.old
+MYMETA.json
+MYMETA.yml
 META.json
 META.yml
-!META.json
-!META.yml
+pm_to_blib
+
+# Distribution tarballs
+*.tar.gz
+
+# macOS
+.DS_Store
+
+# Editor and temp files
+*.swp
+*.swo
+*~
+*.bak
+*.backup
+*.tmp
+
+# Test coverage
+cover_db/
+
+# Backup files
+MANIFEST.bak

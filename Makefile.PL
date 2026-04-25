@@ -74,3 +74,10 @@ WriteMakefile(
     dist  => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
     clean => { FILES => 'Concierge-Users-*' },
 );
+
+sub MY::postamble {
+    return <<'MAKE_FRAG';
+cover :
+	cover -test
+MAKE_FRAG
+}

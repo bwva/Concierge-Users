@@ -1,5 +1,14 @@
 Revision history for Concierge-Users
 
+v0.8.5  2026-05-31
+    - Refactor: replace field_use => 'system' with system => 1 boolean on
+      last_mod_date and created_date; remove field_use => 'identity' from
+      user_id (identity field identified by name only)
+    - Move last_login_date from Standard Fields (12) to System Fields (3);
+      system fields bypass validation
+    - get_field_hints: returns system => 1/0 for all fields
+    - config_to_yaml: emits system: 1 instead of field_use: system
+
 v0.8.4  2026-05-31
     - Fix version consistency: bump Database, File, and YAML backend modules
       to v0.8.4 (were not bumped during v0.8.3 release)

@@ -345,6 +345,7 @@ sub get_field_hints {
 	return {
 		label       => $field_def->{label} || labelize($field_def->{field_name} || $field),
 		type        => $field_def->{type},
+		system      => $field_def->{system} // 0,
 		validate_as => $field_def->{validate_as},
 		max_length  => $field_def->{max_length},
 		options     => $field_def->{options},
@@ -453,7 +454,7 @@ sub config_to_yaml {
 			$yaml .= "    $field:\n";
 			$yaml .= "      field_name: $def->{field_name}\n";
 			$yaml .= "      type: $def->{type}\n";
-			$yaml .= "      field_use: $def->{field_use}\n" if $def->{field_use};
+			$yaml .= "      system: 1\n" if $def->{system};
 			$yaml .= "      required: $def->{required}\n";
 
 			# Only show validate_as if it's different from type
@@ -761,13 +762,13 @@ sub validate_name_field {
 	email
 	phone
 	text_ok
-	last_login_date
 	term_ends
 / );
 
 @Concierge::Users::Meta::system_fields	= ( qw/
-        last_mod_date
-        created_date
+	last_login_date
+	last_mod_date
+	created_date
 / );
 
 %Concierge::Users::Meta::field_definitions	= (
@@ -777,7 +778,6 @@ sub validate_name_field {
 		label => 'User ID',
 		description => 'User login ID - Primary authentication identifier',
 		type => 'text',
-		field_use => 'identity',
 		required => 1,
 		options => [],
 		default => '',
@@ -974,12 +974,12 @@ sub validate_name_field {
 		label => 'Last Login Date',
 		description => 'Timestamp of last successful login',
 		type => 'timestamp',
+		system => 1,
 		required => 0,
 		options => [],
 		default => '0000-00-00 00:00:00',
 		null_value => '0000-00-00 00:00:00',
 		max_length => 19,
-		validate_as => 'timestamp',
 		must_validate => 0,
 	},
 
@@ -989,7 +989,7 @@ sub validate_name_field {
 		label => 'Last Modification Date',
 		description => 'Timestamp of last profile modification',
 		type => 'timestamp',
-		field_use => 'system',
+		system => 1,
 		required => 0,
 		options => [],
 		default => '0000-00-00 00:00:00',
@@ -1002,7 +1002,7 @@ sub validate_name_field {
 		label => 'Created Date',
 		description => 'Timestamp when user account was created',
 		type => 'timestamp',
-		field_use => 'system',
+		system => 1,
 		required => 1,
 		options => [],
 		default => '0000-00-00 00:00:00',
@@ -1174,7 +1174,6 @@ Always present in every setup.
 Primary authentication identifier.
 
     type:          text
-    field_use:     identity
     required:      1
     max_length:    30
     default:       ""
@@ -1230,7 +1229,7 @@ C<field_overrides>.  See L</Field Overrides>.
 
 =back
 
-=head2 Standard Fields (12)
+=head2 Standard Fields (11)
 
 Included by default when C<include_standard_fields> is omitted or set
 to C<'all'>.  Pass an arrayref of names to select specific fields, or
@@ -1278,9 +1277,6 @@ B<Temporal fields:>
 
 =over 4
 
-=item B<last_login_date> -- type C<timestamp>, validate_as C<timestamp>,
-default C<0000-00-00 00:00:00>, max 19
-
 =item B<term_ends> -- type C<date>, validate_as C<date>,
 null_value C<0000-00-00>, max 10
 
@@ -1288,16 +1284,19 @@ null_value C<0000-00-00>, max 10
 
 All standard fields have C<required =E<gt> 0> by default.
 
-=head2 System Fields (2)
+=head2 System Fields (3)
 
-Always appended to the field list.  Auto-managed by the backends;
-cannot be set through the public API.  Protected from overrides.
+Always appended to the field list.  Auto-managed; not set through
+user or app data.  Protected from overrides.
 
 =over 4
 
-=item B<last_mod_date> -- type C<timestamp>, C<field_use =E<gt> 'system'>, updated on every write
+=item B<last_login_date> -- type C<timestamp>, C<system =E<gt> 1>, set by
+C<login_user()>; default C<0000-00-00 00:00:00>
 
-=item B<created_date> -- type C<timestamp>, C<field_use =E<gt> 'system'>, set once on
+=item B<last_mod_date> -- type C<timestamp>, C<system =E<gt> 1>, updated on every write
+
+=item B<created_date> -- type C<timestamp>, C<system =E<gt> 1>, set once on
 creation, C<required =E<gt> 1>
 
 =back
@@ -1317,10 +1316,9 @@ Set automatically; protected from overrides.
 =item C<type> -- Data type: C<text>, C<email>, C<phone>, C<date>,
 C<timestamp>, C<boolean>, C<integer>, C<enum>.
 
-=item C<field_use> -- Operational role of the field.  Omitted for normal
-user-writable fields.  C<identity> marks fields set once at creation and
-never changed (e.g. C<user_id>).  C<system> marks fields auto-managed by
-the backend (e.g. C<created_date>, C<last_mod_date>).
+=item C<system> -- Boolean flag (C<1> or absent).  Set on fields that are
+auto-managed and never supplied as user or app data: C<last_login_date>,
+C<last_mod_date>, C<created_date>.  Absent (false) for all other fields.
 
 =item C<validate_as> -- Validator to use if different from C<type>.
 See L</VALIDATOR TYPES>.
@@ -1748,7 +1746,6 @@ Field Definitions:
     user_id:
       field_name: user_id
       type: text
-      field_use: identity
       required: 1
       default: ""
       description: "User login ID - Primary authentication identifier"
@@ -1924,16 +1921,6 @@ Field Definitions:
       validate_as: boolean
       null_value: ""
 
-    last_login_date:
-      field_name: last_login_date
-      type: timestamp
-      required: 0
-      default: "0000-00-00 00:00:00"
-      description: "Timestamp of last successful login"
-      max_length: 19
-      validate_as: timestamp
-      null_value: "0000-00-00 00:00:00"
-
     term_ends:
       field_name: term_ends
       type: date
@@ -1945,10 +1932,20 @@ Field Definitions:
       null_value: 0000-00-00
 
   System Fields:
+    last_login_date:
+      field_name: last_login_date
+      type: timestamp
+      system: 1
+      required: 0
+      default: "0000-00-00 00:00:00"
+      description: "Timestamp of last successful login"
+      max_length: 19
+      null_value: "0000-00-00 00:00:00"
+
     last_mod_date:
       field_name: last_mod_date
       type: timestamp
-      field_use: system
+      system: 1
       required: 0
       default: "0000-00-00 00:00:00"
       description: "Timestamp of last profile modification"
@@ -1958,7 +1955,7 @@ Field Definitions:
     created_date:
       field_name: created_date
       type: timestamp
-      field_use: system
+      system: 1
       required: 1
       default: "0000-00-00 00:00:00"
       description: "Timestamp when user account was created"

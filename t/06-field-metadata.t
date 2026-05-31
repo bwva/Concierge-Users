@@ -86,7 +86,7 @@ subtest 'Field definitions structure' => sub {
     is($defs->{user_id}{field_name}, 'user_id', 'field_name correct');
     is($defs->{user_id}{label}, 'User ID', 'label correct');
     is($defs->{user_id}{type}, 'text', 'type correct');
-    is($defs->{user_id}{field_use}, 'identity', 'field_use correct');
+    ok(!$defs->{user_id}{system}, 'user_id has no system flag');
     ok($defs->{user_id}{required}, 'required flag set');
     is($defs->{user_id}{max_length}, 30, 'max_length set');
 
@@ -98,7 +98,7 @@ subtest 'Field definitions structure' => sub {
     # Test 3: System field definitions
     ok($defs->{created_date}, 'created_date has definition');
     is($defs->{created_date}{type}, 'timestamp', 'created_date type correct');
-    is($defs->{created_date}{field_use}, 'system', 'created_date field_use correct');
+    ok($defs->{created_date}{system}, 'created_date system flag set');
     is($defs->{created_date}{null_value}, '0000-00-00 00:00:00', 'null_value set');
 
     # Test 4: Enum field with auto-default
@@ -268,7 +268,7 @@ subtest 'get_field_definition' => sub {
     my $created_def = $users->get_field_definition('created_date');
     ok($created_def, 'Got created_date definition');
     is($created_def->{type}, 'timestamp', 'created_date is timestamp type');
-    is($created_def->{field_use}, 'system', 'created_date field_use is system');
+    ok($created_def->{system}, 'created_date system flag set');
 
     # Test 4: Non-existent field
     my $missing = $users->get_field_definition('nonexistent');
@@ -305,12 +305,22 @@ subtest 'get_field_hints' => sub {
     is($hints->{type}, 'email', 'Type in hints');
     is($hints->{required}, 0, 'Required flag in hints');
     is($hints->{max_length}, 255, 'max_length in hints');
+    is($hints->{system}, 0, 'email system flag is 0');
 
     # Get hints for enum field
     my $status_hints = $users->get_field_hints('user_status');
     ok($status_hints, 'Got enum field hints');
     ok($status_hints->{options}, 'Enum field has options');
     is(ref $status_hints->{options}, 'ARRAY', 'Options is array');
+
+    # Get hints for system field
+    my $created_hints = $users->get_field_hints('created_date');
+    ok($created_hints, 'Got created_date field hints');
+    is($created_hints->{system}, 1, 'created_date system flag is 1');
+
+    my $login_hints = $users->get_field_hints('last_login_date');
+    ok($login_hints, 'Got last_login_date field hints');
+    is($login_hints->{system}, 1, 'last_login_date system flag is 1');
 };
 
 # ==============================================================================
@@ -451,8 +461,10 @@ subtest 'Class array access methods' => sub {
     ok((grep { $_ eq 'phone' }  @standard), 'phone in standard fields');
 
     ok(scalar @system > 0, 'user_system_fields returns fields');
-    ok((grep { $_ eq 'created_date'  } @system), 'created_date in system fields');
-    ok((grep { $_ eq 'last_mod_date' } @system), 'last_mod_date in system fields');
+    ok((grep { $_ eq 'last_login_date' } @system), 'last_login_date in system fields');
+    ok((grep { $_ eq 'created_date'    } @system), 'created_date in system fields');
+    ok((grep { $_ eq 'last_mod_date'   } @system), 'last_mod_date in system fields');
+    ok(!(grep { $_ eq 'last_login_date' } @standard), 'last_login_date not in standard fields');
 };
 
 # ==============================================================================

@@ -465,13 +465,13 @@ categories:
 B<Core (4):> C<user_id>, C<moniker>, C<user_status>, C<access_level> --
 always present.
 
-B<Standard (12):> C<first_name>, C<middle_name>, C<last_name>,
+B<Standard (11):> C<first_name>, C<middle_name>, C<last_name>,
 C<prefix>, C<suffix>, C<organization>, C<title>, C<email>, C<phone>,
-C<text_ok>, C<last_login_date>, C<term_ends> -- included by default.
+C<text_ok>, C<term_ends> -- included by default.
 Select specific ones with an arrayref, or pass an empty arrayref
 C<[]> to exclude all standard fields.
 
-B<System (2):> C<last_mod_date>, C<created_date> -- auto-managed
+B<System (3):> C<last_login_date>, C<last_mod_date>, C<created_date> -- auto-managed
 timestamps, protected from overrides and API writes.
 
 B<Application:> Custom fields defined with C<app_fields> as name strings

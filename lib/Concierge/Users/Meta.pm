@@ -332,10 +332,12 @@ sub get_field_validator {
 
 # Get UI-friendly field hints for calling applications
 # Returns hashref with: label, type, validate_as, max_length, options,
-#   description, required, default, null
+#   description, required, default, null, format_as
 # 'null' is the field's null_value (the sentinel for "no data").
 # 'required' means operationally required at the service layer -- always,
 #   regardless of channel -- not app-level conditional required logic.
+# 'format_as' hints how to present or input this field in a UI.
+#   Not validated; apps may supply their own format codes via setup.
 sub get_field_hints {
 	my ($self, $field) = @_;
 
@@ -353,6 +355,7 @@ sub get_field_hints {
 		required    => $field_def->{required},
 		default     => $field_def->{default},
 		null        => $field_def->{null_value},
+		format_as   => $field_def->{format_as},
 	};
 }
 
@@ -784,6 +787,7 @@ sub validate_name_field {
 		null_value => '',
 		max_length => 30,
 		must_validate => 0,
+		format_as => 'text',
 	},
 	moniker => {
 		field_name => 'moniker',
@@ -797,6 +801,7 @@ sub validate_name_field {
 		max_length => 24,
 		validate_as => 'moniker',
 		must_validate => 1,
+		format_as => 'text',
 	},
 	user_status => {
 		field_name => 'user_status',
@@ -810,6 +815,7 @@ sub validate_name_field {
 		max_length => 20,
 		validate_as => 'enum',
 		must_validate => 1,
+		format_as => 'options',
 	},
 	access_level => {
 		field_name => 'access_level',
@@ -823,6 +829,7 @@ sub validate_name_field {
 		max_length => 20,
 		validate_as => 'enum',
 		must_validate => 1,
+		format_as => 'options',
 	},
 
 	# Standard field definitions
@@ -838,6 +845,7 @@ sub validate_name_field {
 		max_length => 50,
 		validate_as => 'name',
 		must_validate => 1,
+		format_as => 'text',
 	},
 	middle_name => {
 		field_name => 'middle_name',
@@ -851,6 +859,7 @@ sub validate_name_field {
 		max_length => 50,
 		validate_as => 'name',
 		must_validate => 1,
+		format_as => 'text',
 	},
 	last_name => {
 		field_name => 'last_name',
@@ -864,6 +873,7 @@ sub validate_name_field {
 		max_length => 50,
 		validate_as => 'name',
 		must_validate => 1,
+		format_as => 'text',
 	},
 	prefix => {
 		field_name => 'prefix',
@@ -877,6 +887,7 @@ sub validate_name_field {
 		max_length => 10,
 		validate_as => 'enum',
 		must_validate => 0,
+		format_as => 'options',
 	},
 	suffix => {
 		field_name => 'suffix',
@@ -890,6 +901,7 @@ sub validate_name_field {
 		max_length => 10,
 		validate_as => 'enum',
 		must_validate => 0,
+		format_as => 'options',
 	},
 	organization => {
 		field_name => 'organization',
@@ -903,6 +915,7 @@ sub validate_name_field {
 		max_length => 100,
 		validate_as => 'text',
 		must_validate => 0,
+		format_as => 'text',
 	},
 	title => {
 		field_name => 'title',
@@ -916,6 +929,7 @@ sub validate_name_field {
 		max_length => 100,
 		validate_as => 'text',
 		must_validate => 0,
+		format_as => 'text',
 	},
 	email => {
 		field_name => 'email',
@@ -929,6 +943,7 @@ sub validate_name_field {
 		max_length => 255,
 		validate_as => 'email',
 		must_validate => 0,
+		format_as => 'text',
 	},
 	phone => {
 		field_name => 'phone',
@@ -942,6 +957,7 @@ sub validate_name_field {
 		max_length => 20,
 		validate_as => 'phone',
 		must_validate => 0,
+		format_as => 'text',
 	},
 	text_ok => {
 		field_name => 'text_ok',
@@ -955,6 +971,7 @@ sub validate_name_field {
 		max_length => 1,
 		validate_as => 'boolean',
 		must_validate => 0,
+		format_as => 'boolean',
 	},
 	term_ends => {
 		field_name => 'term_ends',
@@ -968,6 +985,7 @@ sub validate_name_field {
 		max_length => 10,
 		validate_as => 'date',
 		must_validate => 0,
+		format_as => 'date',
 	},
 	last_login_date => {
 		field_name => 'last_login_date',
@@ -981,6 +999,7 @@ sub validate_name_field {
 		null_value => '0000-00-00 00:00:00',
 		max_length => 19,
 		must_validate => 0,
+		format_as => 'datetime',
 	},
 
 	# System field definitions
@@ -996,6 +1015,7 @@ sub validate_name_field {
 		null_value => '0000-00-00 00:00:00',
 		max_length => 19,
 		must_validate => 0,
+		format_as => 'datetime',
 	},
 	created_date => {
 		field_name => 'created_date',
@@ -1009,6 +1029,7 @@ sub validate_name_field {
 		null_value => '0000-00-00 00:00:00',
 		max_length => 19,
 		must_validate => 0,
+		format_as => 'datetime',
 	},
 );
 
@@ -1648,7 +1669,7 @@ C<validate_as> or C<type>, or C<undef> if no validator is available.
 
 Returns a hashref of consumer-friendly attributes for a field:
 C<label>, C<type>, C<validate_as>, C<max_length>, C<options>,
-C<description>, C<required>, C<default>, C<null>.
+C<description>, C<required>, C<default>, C<null>, C<format_as>.
 
 C<null> is the field's null value (the sentinel for "no data").
 
@@ -1656,6 +1677,25 @@ C<required> means operationally required at the service layer -- always,
 regardless of channel (web form, CLI, programmatic).  It is distinct
 from app-level conditional required logic, which calling applications
 manage independently.
+
+C<format_as> is a hint for the consuming application about how to present
+or input this field.  It is not used or validated by Concierge itself.
+
+Standard fields always have C<format_as> set to one of the Concierge
+conventions.  Applications may override C<format_as> on any standard
+field via C<field_overrides> during setup, and may set it to any value
+on app-defined fields via C<app_fields>.  Whatever value is supplied
+passes through unchanged and is returned by C<get_field_hints()>,
+allowing an application to store its own native format codes or
+identifiers directly in the field definition and retrieve them later
+without any translation layer.
+
+Concierge convention values for C<format_as>: C<text>, C<options>,
+C<boolean>, C<number>, C<date>, C<datetime>, C<time>.  All built-in
+enum fields use C<options>; the C<options> key in the hints hashref
+carries the full list of valid values, which consuming applications
+may use for both input widgets and display (e.g. rendering a
+previously selected value in context of its full option set).
 
 =head3 get_user_fields
 
@@ -1751,6 +1791,7 @@ Field Definitions:
       description: "User login ID - Primary authentication identifier"
       max_length: 30
       null_value: ""
+      format_as: text
 
     moniker:
       field_name: moniker
@@ -1762,6 +1803,7 @@ Field Definitions:
       max_length: 24
       must_validate: 1
       null_value: ""
+      format_as: text
 
     user_status:
       field_name: user_status
@@ -1776,6 +1818,7 @@ Field Definitions:
       max_length: 20
       must_validate: 1
       null_value: ""
+      format_as: options
 
     access_level:
       field_name: access_level
@@ -1793,6 +1836,7 @@ Field Definitions:
       validate_as: enum
       must_validate: 1
       null_value: ""
+      format_as: options
 
   Standard Fields:
     first_name:
@@ -1805,6 +1849,7 @@ Field Definitions:
       max_length: 50
       must_validate: 1
       null_value: ""
+      format_as: text
 
     middle_name:
       field_name: middle_name
@@ -1816,6 +1861,7 @@ Field Definitions:
       max_length: 50
       must_validate: 1
       null_value: ""
+      format_as: text
 
     last_name:
       field_name: last_name
@@ -1827,6 +1873,7 @@ Field Definitions:
       max_length: 50
       must_validate: 1
       null_value: ""
+      format_as: text
 
     prefix:
       field_name: prefix
@@ -1848,6 +1895,7 @@ Field Definitions:
       max_length: 10
       validate_as: enum
       null_value: ""
+      format_as: options
 
     suffix:
       field_name: suffix
@@ -1870,6 +1918,7 @@ Field Definitions:
       max_length: 10
       validate_as: enum
       null_value: ""
+      format_as: options
 
     organization:
       field_name: organization
@@ -1880,6 +1929,7 @@ Field Definitions:
       max_length: 100
       validate_as: text
       null_value: ""
+      format_as: text
 
     title:
       field_name: title
@@ -1890,6 +1940,7 @@ Field Definitions:
       max_length: 100
       validate_as: text
       null_value: ""
+      format_as: text
 
     email:
       field_name: email
@@ -1900,6 +1951,7 @@ Field Definitions:
       max_length: 255
       validate_as: email
       null_value: ""
+      format_as: text
 
     phone:
       field_name: phone
@@ -1910,6 +1962,7 @@ Field Definitions:
       max_length: 20
       validate_as: phone
       null_value: ""
+      format_as: text
 
     text_ok:
       field_name: text_ok
@@ -1920,6 +1973,7 @@ Field Definitions:
       max_length: 1
       validate_as: boolean
       null_value: ""
+      format_as: boolean
 
     term_ends:
       field_name: term_ends
@@ -1930,6 +1984,7 @@ Field Definitions:
       max_length: 10
       validate_as: date
       null_value: 0000-00-00
+      format_as: date
 
   System Fields:
     last_login_date:
@@ -1941,6 +1996,7 @@ Field Definitions:
       description: "Timestamp of last successful login"
       max_length: 19
       null_value: "0000-00-00 00:00:00"
+      format_as: datetime
 
     last_mod_date:
       field_name: last_mod_date
@@ -1951,6 +2007,7 @@ Field Definitions:
       description: "Timestamp of last profile modification"
       max_length: 19
       null_value: "0000-00-00 00:00:00"
+      format_as: datetime
 
     created_date:
       field_name: created_date
@@ -1961,3 +2018,4 @@ Field Definitions:
       description: "Timestamp when user account was created"
       max_length: 19
       null_value: "0000-00-00 00:00:00"
+      format_as: datetime

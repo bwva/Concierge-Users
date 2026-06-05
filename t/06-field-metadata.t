@@ -631,5 +631,108 @@ subtest '_yaml_scalar_value edge cases' => sub {
     is(Concierge::Users::Meta::_yaml_scalar_value(-5), '-5', 'Negative integer passes through');
 };
 
+# ==============================================================================
+# Test Group 18: format_as property
+# ==============================================================================
+subtest 'format_as in field definitions and get_field_hints' => sub {
+    my $storage_dir = tempdir(CLEANUP => 1);
+
+    my $config = {
+        storage_dir             => $storage_dir,
+        backend                 => 'database',
+        include_standard_fields => [qw/ email phone text_ok term_ends prefix suffix /],
+        app_fields => [
+            {
+                field_name => 'widget_type',
+                type       => 'enum',
+                options    => ['*basic', 'pro'],
+                format_as  => 'sel',          # app's own native token
+            },
+            {
+                field_name => 'bio',
+                type       => 'text',
+                format_as  => 'textarea',     # app's own native token
+            },
+            {
+                field_name => 'score',
+                type       => 'integer',
+                format_as  => 'number',       # Concierge convention
+            },
+            {
+                field_name => 'no_format',    # deliberately no format_as
+                type       => 'text',
+            },
+        ],
+        field_overrides => [
+            {
+                field_name => 'email',
+                format_as  => 't',            # override with app token
+            },
+        ],
+    };
+
+    my $result = Concierge::Users->setup($config);
+    my $users  = Concierge::Users->new($result->{config_file});
+
+    # --- Built-in convention values ---
+
+    my $h = $users->get_field_hints('user_id');
+    is($h->{format_as}, 'text', 'user_id format_as is text');
+
+    $h = $users->get_field_hints('moniker');
+    is($h->{format_as}, 'text', 'moniker format_as is text');
+
+    $h = $users->get_field_hints('user_status');
+    is($h->{format_as}, 'options', 'user_status (enum) format_as is options');
+
+    $h = $users->get_field_hints('access_level');
+    is($h->{format_as}, 'options', 'access_level (enum) format_as is options');
+
+    $h = $users->get_field_hints('prefix');
+    is($h->{format_as}, 'options', 'prefix (enum) format_as is options');
+
+    $h = $users->get_field_hints('suffix');
+    is($h->{format_as}, 'options', 'suffix (enum) format_as is options');
+
+    $h = $users->get_field_hints('phone');
+    is($h->{format_as}, 'text', 'phone format_as is text');
+
+    $h = $users->get_field_hints('text_ok');
+    is($h->{format_as}, 'boolean', 'text_ok format_as is boolean');
+
+    $h = $users->get_field_hints('term_ends');
+    is($h->{format_as}, 'date', 'term_ends format_as is date');
+
+    $h = $users->get_field_hints('last_login_date');
+    is($h->{format_as}, 'datetime', 'last_login_date format_as is datetime');
+
+    $h = $users->get_field_hints('last_mod_date');
+    is($h->{format_as}, 'datetime', 'last_mod_date format_as is datetime');
+
+    $h = $users->get_field_hints('created_date');
+    is($h->{format_as}, 'datetime', 'created_date format_as is datetime');
+
+    # --- App-supplied format_as passes through unchanged ---
+
+    $h = $users->get_field_hints('widget_type');
+    is($h->{format_as}, 'sel', 'app enum field: custom token passes through');
+
+    $h = $users->get_field_hints('bio');
+    is($h->{format_as}, 'textarea', 'app text field: custom token passes through');
+
+    $h = $users->get_field_hints('score');
+    is($h->{format_as}, 'number', 'app integer field: convention value passes through');
+
+    # --- Missing format_as returns undef ---
+
+    $h = $users->get_field_hints('no_format');
+    ok(!defined $h->{format_as}, 'app field with no format_as returns undef');
+
+    # --- field_overrides format_as passes through ---
+
+    $h = $users->get_field_hints('email');
+    is($h->{format_as}, 't', 'field_overrides format_as passes through unchanged');
+};
+
 done_testing();
 

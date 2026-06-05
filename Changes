@@ -1,5 +1,10 @@
 Revision history for Concierge-Users
 
+v0.9.1  2026-06-05
+    - Add format_as test coverage to t/06-field-metadata.t: built-in
+      convention values, app-supplied tokens via app_fields, field_overrides
+      pass-through, and missing format_as returns undef
+
 v0.9.0  2026-06-05
     - get_field_hints: add format_as to returned hashref
     - Add format_as property to all built-in field definitions (core,

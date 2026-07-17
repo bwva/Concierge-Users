@@ -4,7 +4,7 @@ User data management with multiple storage backends.
 
 ## VERSION
 
-v0.9.2
+v0.9.3
 
 ## SYNOPSIS
 
@@ -56,6 +56,14 @@ perldoc Concierge::Users::YAML        # YAML backend
 - **yaml** -- One YAML file per user via YAML.  Good for individual-user access patterns.
 
 All three backends expose the same API and are selected at setup time.
+
+## FIELD CUSTOMIZATION
+
+Beyond the built-in standard fields, applications can add their own with
+`app_fields` at setup time, and override built-in field definitions
+(labels, options, validation, etc.) with `field_overrides`. See `perldoc
+Concierge::Users::Meta` for the full field catalog and the filter DSL used
+by `list_users()`.
 
 ## INSTALLATION
 

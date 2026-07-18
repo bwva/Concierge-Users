@@ -1,6 +1,6 @@
 # Concierge::Users
 
-User data management with multiple storage backends.
+Configurable user data management for applications.
 
 ## VERSION
 
@@ -37,6 +37,10 @@ Concierge::Users manages user data records with a two-phase lifecycle:
 loads the saved config for runtime CRUD operations.  All methods return
 hashrefs with a `success` key.
 
+Concierge::Users can be used standalone, or as one of the three core
+components (alongside Concierge::Auth and Concierge::Sessions) that make
+up the Concierge service layer.
+
 ## DOCUMENTATION
 
 Comprehensive POD is available for each module:
@@ -59,11 +63,40 @@ All three backends expose the same API and are selected at setup time.
 
 ## FIELD CUSTOMIZATION
 
-Beyond the built-in standard fields, applications can add their own with
-`app_fields` at setup time, and override built-in field definitions
-(labels, options, validation, etc.) with `field_overrides`. See `perldoc
-Concierge::Users::Meta` for the full field catalog and the filter DSL used
-by `list_users()`.
+Concierge::Users provides a standard set of fields and their metadata for
+typical user data; definitions and metadata (labels, options, validation,
+etc.) for these fields may be overridden at setup time with
+`field_overrides`, and the Users data store may be configured to use none
+or only a subset of the standard fields with `include_standard_fields`.
+
+Beyond the standard fields, applications can add their own with
+`app_fields`.
+
+Standard fields are:
+
+| Field | Notes |
+|---|---|
+| `user_id` | Required, unique identifier |
+| `moniker` | Required, display name |
+| `user_status` | Required, account status, e.g. `Eligible`, `OK`, `Inactive` |
+| `access_level` | Required, permission level, e.g. `anon`, `visitor`, `member`, `staff`, `admin` |
+| `first_name` | User's first name |
+| `middle_name` | User's middle name |
+| `last_name` | User's last name |
+| `prefix` | Name prefix or title, e.g. `Dr`, `Mr`, `Ms` |
+| `suffix` | Name suffix or professional designation, e.g. `Jr`, `PhD` |
+| `organization` | User's organization or affiliation |
+| `title` | User's position or job title |
+| `email` | Email address for notifications |
+| `phone` | Phone number with country code |
+| `text_ok` | Consent for text messages |
+| `term_ends` | Membership/subscription expiry |
+| `last_login_date` | Auto-updated on login |
+| `last_mod_date` | Auto-updated on every profile write |
+| `created_date` | Set once when the account is created |
+
+See `perldoc Concierge::Users::Meta` for the full field catalog and the
+filter DSL used by `list_users()`.
 
 ## INSTALLATION
 

@@ -1,10 +1,10 @@
-package Concierge::Users::Database v0.9.3;
+package Concierge::Users::SQLite v0.9.3;
 use v5.36;
 use Carp qw/ croak /;
 use DBI;
 use parent qw/ Concierge::Users::Meta /;
 
-# ABSTRACT: Database backend for Concierge::Users
+# ABSTRACT: SQLite backend for Concierge::Users
 
 # ==============================================================================
 # Configure Class Method - One-time setup (called by Users->setup)
@@ -32,7 +32,7 @@ sub configure {
         return {
             success => 0,
             message => sprintf(
-                "Database backend connection failed:\n" .
+                "SQLite backend connection failed:\n" .
                 "  - Database file: %s\n" .
                 "  - Error: %s",
                 $db_file,
@@ -91,7 +91,7 @@ sub configure {
     unless ($storage_ok) {
         return {
             success => 0,
-            message => "Failed to initialize storage for database backend",
+            message => "Failed to initialize storage for SQLite backend",
         };
     }
 
@@ -101,7 +101,7 @@ sub configure {
     # Return success with config
     return {
         success => 1,
-        message => "Database backend configured successfully",
+        message => "SQLite backend configured successfully",
         config => {
             storage_dir       => $storage_dir,
             db_file           => 'users.db',
@@ -137,7 +137,7 @@ sub new {
 
     unless ($dbh) {
         croak sprintf(
-            "Database backend connection failed:\n" .
+            "SQLite backend connection failed:\n" .
             "  - Database file: %s\n" .
             "  - Error: %s",
             $db_file,
@@ -423,7 +423,7 @@ __END__
 
 =head1 NAME
 
-Concierge::Users::Database - SQLite storage backend for Concierge::Users
+Concierge::Users::SQLite - SQLite storage backend for Concierge::Users
 
 =head1 VERSION
 
@@ -433,10 +433,10 @@ v0.9.1
 
     use Concierge::Users;
 
-    # Setup with the database backend
+    # Setup with the SQLite backend
     Concierge::Users->setup({
         storage_dir             => '/var/lib/myapp/users',
-        backend                 => 'database',
+        backend_class           => 'Concierge::Users::SQLite',
         include_standard_fields => 'all',
     });
 
@@ -445,7 +445,7 @@ v0.9.1
 
 =head1 DESCRIPTION
 
-Concierge::Users::Database implements the Concierge::Users storage
+Concierge::Users::SQLite implements the Concierge::Users storage
 interface using SQLite via L<DBI> and L<DBD::SQLite>.  User records are
 stored in a single C<users> table inside C<< <storage_dir>/users.db >>.
 
@@ -465,7 +465,7 @@ L<Concierge::Users> API; direct instantiation is not required.
 
 =head2 configure
 
-    my $result = Concierge::Users::Database->configure(\%setup_config);
+    my $result = Concierge::Users::SQLite->configure(\%setup_config);
 
 Class method called by C<< Concierge::Users->setup() >>.  Creates (or
 archives and recreates) the SQLite database and C<users> table.  Returns
@@ -473,7 +473,7 @@ a hashref with C<success>, C<message>, and C<config>.
 
 =head2 new
 
-    my $backend = Concierge::Users::Database->new(\%runtime_config);
+    my $backend = Concierge::Users::SQLite->new(\%runtime_config);
 
 Constructor called by C<< Concierge::Users->new() >>.  Connects to the
 existing SQLite database using the saved configuration.  Croaks on

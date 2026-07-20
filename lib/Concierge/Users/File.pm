@@ -517,14 +517,14 @@ v0.9.1
     # Setup with the file backend (TSV, default)
     Concierge::Users->setup({
         storage_dir             => '/var/lib/myapp/users',
-        backend                 => 'file',
+        backend_class           => 'Concierge::Users::File',
         include_standard_fields => 'all',
     });
 
     # Setup with CSV format
     Concierge::Users->setup({
         storage_dir             => '/var/lib/myapp/users',
-        backend                 => 'file',
+        backend_class           => 'Concierge::Users::File',
         file_format             => 'csv',
         include_standard_fields => [qw/ email phone /],
     });
@@ -620,7 +620,7 @@ L<Concierge::Users> -- main API
 
 L<Concierge::Users::Meta> -- field definitions and validators
 
-L<Concierge::Users::Database>, L<Concierge::Users::YAML> -- alternative
+L<Concierge::Users::SQLite>, L<Concierge::Users::YAML> -- alternative
 backends
 
 =head1 AUTHOR

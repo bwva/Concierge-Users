@@ -14,7 +14,7 @@ use Concierge::Users;
 # One-time setup
 Concierge::Users->setup({
     storage_dir             => '/var/lib/myapp/users',
-    backend                 => 'database',   # 'database', 'file', or 'yaml'
+    backend_class           => 'Concierge::Users::SQLite',
     include_standard_fields => 'all',
     app_fields              => ['role', 'theme'],
 });
@@ -48,16 +48,19 @@ Comprehensive POD is available for each module:
 ```bash
 perldoc Concierge::Users              # Main API and usage
 perldoc Concierge::Users::Meta        # Field catalog, validators, filter DSL, customization
-perldoc Concierge::Users::Database    # SQLite backend
+perldoc Concierge::Users::SQLite      # SQLite backend
 perldoc Concierge::Users::File        # CSV/TSV backend
 perldoc Concierge::Users::YAML        # YAML backend
 ```
 
 ## STORAGE BACKENDS
 
-- **database** -- SQLite via DBI/DBD::SQLite.  Recommended for production.
-- **file** -- CSV or TSV flat file via Text::CSV.  Set `file_format => 'csv'` or `'tsv'` (default) in `setup()`.
-- **yaml** -- One YAML file per user via YAML.  Good for individual-user access patterns.
+A backend is selected by passing its fully-qualified class name as
+`backend_class` to `setup()`.
+
+- **Concierge::Users::SQLite** -- SQLite via DBI/DBD::SQLite.  Recommended for production.
+- **Concierge::Users::File** -- CSV or TSV flat file via Text::CSV.  Set `file_format => 'csv'` or `'tsv'` (default) in `setup()`.
+- **Concierge::Users::YAML** -- One YAML file per user via YAML.  Good for individual-user access patterns.
 
 All three backends expose the same API and are selected at setup time.
 

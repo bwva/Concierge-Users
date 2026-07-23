@@ -1,6 +1,6 @@
 Revision history for Concierge-Users
 
-v0.9.4  (unreleased)
+v0.9.4  2026-07-23
     - BREAKING: Concierge::Users->setup's configuration key renamed from
       backend to backend_class, to disambiguate it from the unrelated
       "friendly name" sense of backend used elsewhere in the Concierge

@@ -50,23 +50,23 @@ WriteMakefile(
         provides => {
             'Concierge::Users' => {
                 file    => 'lib/Concierge/Users.pm',
-                version => 'v0.9.3',
+                version => 'v0.9.4',
             },
             'Concierge::Users::Meta' => {
                 file    => 'lib/Concierge/Users/Meta.pm',
-                version => 'v0.9.3',
+                version => 'v0.9.4',
             },
             'Concierge::Users::SQLite' => {
                 file    => 'lib/Concierge/Users/SQLite.pm',
-                version => 'v0.9.3',
+                version => 'v0.9.4',
             },
             'Concierge::Users::File' => {
                 file    => 'lib/Concierge/Users/File.pm',
-                version => 'v0.9.3',
+                version => 'v0.9.4',
             },
             'Concierge::Users::YAML' => {
                 file    => 'lib/Concierge/Users/YAML.pm',
-                version => 'v0.9.3',
+                version => 'v0.9.4',
             },
         },
     },

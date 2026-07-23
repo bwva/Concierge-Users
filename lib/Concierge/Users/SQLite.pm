@@ -1,4 +1,4 @@
-package Concierge::Users::SQLite v0.9.3;
+package Concierge::Users::SQLite v0.9.4;
 use v5.36;
 use Carp qw/ croak /;
 use DBI;
